@@ -1,5 +1,6 @@
 import React from "react";
 import { Editor } from "slate-react";
+import { useState } from "react";
 import { Value } from "slate";
 import Code from "../tags/Code";
 import Bold from "../tags/Bold";
@@ -9,26 +10,30 @@ import renderMark from "../render/RenderMark";
 import renderBlock from "../render/RenderBlock";
 import { BOLD, ITALIC, CODE, PARAGRAPH, UNDERLINE } from "../constants/Types";
 
-const initialValue = Value.fromJSON({
-    document: {
-        nodes: [
-            {
-                object: "block",
-                type: "paragraph",
-                nodes: [
-                    {
-                        object: "text",
-                        leaves: [
-                            {
-                                text: "A line of text in a paragraph."
-                            }
-                        ]
-                    }
-                ]
-            }
-        ]
+const existingValue = JSON.parse(localStorage.getItem("content"));
+
+const initialValue = Value.fromJSON(
+    existingValue || {
+        document: {
+            nodes: [
+                {
+                    object: "block",
+                    type: "paragraph",
+                    nodes: [
+                        {
+                            object: "text",
+                            leaves: [
+                                {
+                                    text: "A line of text in a paragraph."
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
     }
-});
+);
 
 export default class App extends React.Component {
     constructor(props) {
@@ -42,10 +47,15 @@ export default class App extends React.Component {
     }
 
     onChange = ({ value }) => {
+        const content = JSON.stringify(value.toJSON());
+        localStorage.setItem("content", content);
         this.setState({ value });
     };
 
     onKeyDown = (event, editor, next) => {
+        if (event.key == "Enter") {
+            editor.splitBlock();
+        }
         if (!event.ctrlKey) return next();
 
         // Decide what to do based on the key code...
@@ -84,16 +94,18 @@ export default class App extends React.Component {
 
     render() {
         return (
-            <div className="container">
+            <div>
                 <p>Hello</p>
-                <Editor
-                    value={this.state.value}
-                    onChange={this.onChange}
-                    onKeyDown={this.onKeyDown}
-                    renderNode={this.renderNode}
-                    renderMark={this.renderMark}
-                    renderBlock={this.renderBlock}
-                />
+                <div className="container">
+                    <Editor
+                        onKeyDown={this.onKeyDown}
+                        value={this.state.value}
+                        onChange={this.onChange}
+                        renderNode={this.renderNode}
+                        renderMark={this.renderMark}
+                        renderBlock={this.renderBlock}
+                    />
+                </div>
                 <button
                     onClick={() => {
                         console.log(this.state.value);
